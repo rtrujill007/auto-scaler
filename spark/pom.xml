@@ -1,0 +1,270 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+			<groupId>com.esri</groupId>
+  			<artifactId>auto-scaler</artifactId>
+			<version>1.0.0</version>
+			<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>spark</artifactId>
+	<version>1.0.0</version>
+	<packaging>jar</packaging>
+
+	<name>Plane Streaming App</name>
+
+	<properties>
+		<spark.version>2.2.0</spark.version>
+		<hadoop-api.version>2.7.3</hadoop-api.version>
+		<kafka.version>0.10.0.1</kafka.version>
+		<log4j.version>2.10.0</log4j.version>
+		<curator.version>2.4.0</curator.version>
+
+		<!-- Docker Properties -->
+		<oracle.jre.version>1.8.0.151</oracle.jre.version>
+		<sparkenv.file.name>spark-env.sh</sparkenv.file.name>
+		<sparkenv.file.finaldest.path>/opt/spark/dist/conf/${sparkenv.file.name}</sparkenv.file.finaldest.path>
+		<realtime.libs.dest>/realtime-libs</realtime.libs.dest>
+		<realtime.libs.classpath>${realtime.libs.dest}/*</realtime.libs.classpath>
+		<docker.namespace>rtrujill007</docker.namespace>
+		<base.spark.image>mesosphere/spark:2.0.0-2.2.0-1-hadoop-2.7</base.spark.image>
+		<docker.repository>plane-streaming-app</docker.repository>
+		<docker.image.name>${docker.namespace}/${docker.repository}</docker.image.name>
+		<log4j2.conf.file>log4j2conf.xml</log4j2.conf.file>
+	</properties>
+
+	<!-- project dependencies -->
+	<dependencies>
+		<dependency>
+			<groupId>org.scala-lang</groupId>
+			<artifactId>scala-library</artifactId>
+			<version>${scala.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.scala-lang</groupId>
+			<artifactId>scala-reflect</artifactId>
+			<version>${scala.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-csv</artifactId>
+			<version>2.6.5</version>
+		</dependency>
+
+		<!-- Spark -->
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-core_${scala.dep.version}</artifactId>
+			<version>${spark.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-streaming_${scala.dep.version}</artifactId>
+			<version>${spark.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-streaming-kafka-0-10_${scala.dep.version}</artifactId>
+			<version>${spark.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-sql_${scala.dep.version}</artifactId>
+			<version>${spark.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka_${scala.dep.version}</artifactId>
+			<version>${kafka.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>log4j-over-slf4j</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<!-- Tests -->
+		<dependency>
+			<groupId>org.apache.curator</groupId>
+			<artifactId>curator-test</artifactId>
+			<version>${curator.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.bizo</groupId>
+			<artifactId>mighty-csv_${scala.dep.version}</artifactId>
+			<version>0.2</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.scala-tools</groupId>
+				<artifactId>maven-scala-plugin</artifactId>
+				<version>2.15.2</version>
+				<configuration>
+					<checkMultipleScalaVersions>false</checkMultipleScalaVersions>
+					<recompileMode>incremental</recompileMode>
+					<jvmArgs>
+						<jvmArg>-Xss1024k</jvmArg>
+						<jvmArg>-Xms64m</jvmArg>
+						<jvmArg>-Xmx2048m</jvmArg>
+					</jvmArgs>
+				</configuration>
+				<executions>
+					<execution>
+						<id>compile</id>
+						<goals>
+							<goal>compile</goal>
+							<goal>testCompile</goal>
+						</goals>
+					</execution>
+					<execution>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>compile</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.8</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>src/main/scala</source>
+								<source>src/main/java</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.5.1</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
+			<!-- disable surefire -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.12.3</version>
+				<configuration>
+					<skipTests>true</skipTests>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.0.1</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Create the executable jar -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>target/lib</outputDirectory>
+							<overWriteReleases>false</overWriteReleases>
+							<overWriteSnapshots>false</overWriteSnapshots>
+							<overWriteIfNewer>true</overWriteIfNewer>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.5</version>
+				<configuration>
+					<finalName>PlaneStreamingApp</finalName>
+					<outputDirectory>target</outputDirectory>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<classpathPrefix>lib/</classpathPrefix>
+							<mainClass>com.esri.spark.PlaneStreamingApp</mainClass>
+						</manifest>
+						<manifestEntries>
+							<Class-Path>lib/</Class-Path>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>io.fabric8</groupId>
+				<artifactId>docker-maven-plugin</artifactId>
+				<version>0.22.1</version>
+				<configuration>
+					<skip>false</skip>
+					<images>
+						<image>
+							<alias>PlaneStreamingApp</alias>
+							<name>${docker.image.name}</name>
+							<build>
+								<from>${base.spark.image}</from>
+								<assembly>
+									<descriptor>assembly.xml</descriptor>
+								</assembly>
+								<env>
+									<CLASSPATH>${realtime.libs.classpath}</CLASSPATH>
+								</env>
+								<runCmds>
+									<runCmd>mv /maven ${realtime.libs.dest}</runCmd>
+									<runCmd>echo "export SPARK_CLASSPATH=\"${realtime.libs.classpath}\"" | tee ${sparkenv.file.finaldest.path}</runCmd>
+								</runCmds>
+							</build>
+						</image>
+					</images>
+					<logDate>default</logDate>
+					<autoPull>true</autoPull>
+					<verbose>true</verbose>
+				</configuration>
+				<executions>
+					<execution>
+						<id>create-images</id>
+						<phase>package</phase>
+						<goals>
+							<goal>build</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

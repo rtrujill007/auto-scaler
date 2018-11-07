@@ -1,2 +1,14 @@
 *.class
 *.log
+target
+tmp
+.history
+dist
+.idea
+/.idea
+/*.iml
+*.iml
+/out
+/.idea_modules
+/.classpath
+/.project
