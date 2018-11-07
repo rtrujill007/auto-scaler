@@ -14,7 +14,7 @@
 	<version>1.0.0</version>
 	<packaging>jar</packaging>
 
-	<name>Plane Streaming App</name>
+	<name>Taxis Streaming App</name>
 
 	<properties>
 		<spark.version>2.2.0</spark.version>
@@ -31,7 +31,7 @@
 		<realtime.libs.classpath>${realtime.libs.dest}/*</realtime.libs.classpath>
 		<docker.namespace>rtrujill007</docker.namespace>
 		<base.spark.image>mesosphere/spark:2.0.0-2.2.0-1-hadoop-2.7</base.spark.image>
-		<docker.repository>plane-streaming-app</docker.repository>
+		<docker.repository>taxis-streaming-app</docker.repository>
 		<docker.image.name>${docker.namespace}/${docker.repository}</docker.image.name>
 		<log4j2.conf.file>log4j2conf.xml</log4j2.conf.file>
 	</properties>
@@ -104,7 +104,7 @@
 	</dependencies>
 
 	<build>
-		<finalName>plane-streaming-app</finalName>
+		<finalName>taxis-streaming-app</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.scala-tools</groupId>
@@ -211,13 +211,13 @@
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>2.5</version>
 				<configuration>
-					<finalName>plane-streaming-app</finalName>
+					<finalName>taxis-streaming-app</finalName>
 					<outputDirectory>target</outputDirectory>
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
-							<mainClass>com.esri.spark.PlaneStreamingApp</mainClass>
+							<mainClass>com.esri.spark.TaxisStreamingApp</mainClass>
 						</manifest>
 						<manifestEntries>
 							<Class-Path>lib/</Class-Path>
@@ -231,10 +231,10 @@
 				<artifactId>docker-maven-plugin</artifactId>
 				<version>0.22.1</version>
 				<configuration>
-					<skip>false</skip>
+					<skip>false</skip>x
 					<images>
 						<image>
-							<alias>PlaneStreamingApp</alias>
+							<alias>TaxisStreamingApp</alias>
 							<name>${docker.image.name}</name>
 							<build>
 								<from>${base.spark.image}</from>

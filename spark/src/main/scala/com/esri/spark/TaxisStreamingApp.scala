@@ -10,12 +10,12 @@ import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
 //
-// PlaneStreamingApp
+// TaxisStreamingApp
 //
 // NOTE TO SELF: DON'T use the App trait!
 // http://www.puroguramingu.com/2016/02/26/spark-dos-donts.html
 //
-object PlaneStreamingApp {
+object TaxisStreamingApp {
 
   private val log = LogFactory.getLog(this.getClass)
 
@@ -25,7 +25,7 @@ object PlaneStreamingApp {
   def main(args: Array[String]): Unit = {
 
     if (args.length < 6) {
-      System.err.println("Usage: PlaneStreamingApp <sparkMaster> <emitIntervalInMillis>" +
+      System.err.println("Usage: TaxisStreamingApp <sparkMaster> <emitIntervalInMillis>" +
           "<kafkaBrokers> <kafkaConsumerGroup> <kafkaTopics> <kafkaThreads>")
       System.exit(1)
     }
@@ -36,7 +36,7 @@ object PlaneStreamingApp {
     val sConf = new SparkConf(true)
         .setAppName(getClass.getSimpleName)
 
-    val sc = new SparkContext(sparkMaster, "PlaneStreamingApp", sConf)
+    val sc = new SparkContext(sparkMaster, "taxis-streaming-worker", sConf)
 
     // the streaming context
     val ssc = new StreamingContext(sc, Milliseconds(emitInterval.toInt))
@@ -48,13 +48,12 @@ object PlaneStreamingApp {
         val count = rdd.count()
         if (count > 0) {
           val msg = "Time %s: reading from kafka (%s total records)".format(time, count)
-          log.warn(msg)
-          println(msg)
+          log.info(msg)
         }
     }
 
-    //log.info("Stream is starting now...")
-    println("Stream is starting now...")
+    log.info("Stream is starting now...")
+    //println("Stream is starting now...")
 
     // start the stream
     ssc.start
