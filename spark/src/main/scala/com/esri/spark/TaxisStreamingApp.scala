@@ -35,11 +35,14 @@ object TaxisStreamingApp {
     // configuration
     val sConf = new SparkConf(true)
         .setAppName(getClass.getSimpleName)
-
     val sc = new SparkContext(sparkMaster, "taxis-streaming-worker", sConf)
 
     // the streaming context
     val ssc = new StreamingContext(sc, Milliseconds(emitInterval.toInt))
+
+    // init the metrics sender
+    val statsDHost = MetricsUtil.getStatsdHost
+    val statsDPort = MetricsUtil.getStatsdPort
 
     // create the kafka stream
     val stream = createKafkaStream(ssc, kBrokers, kConsumerGroup, kTopics, kThreads.toInt)
@@ -47,13 +50,35 @@ object TaxisStreamingApp {
       (rdd, time) =>
         val count = rdd.count()
         if (count > 0) {
+          // send metrics
+          rdd.foreachPartition { itr =>
+
+            val metrics = {
+              for(
+                host <- statsDHost;
+                port <- statsDPort
+              ) yield {
+                MetricsUtil(host, port)
+              }
+            } getOrElse {
+              throw new Exception("Failed to initialize the Metrics Gatherer...")
+            }
+
+            var bytesReceived = 0
+            var eventsReceived = 0
+            for (data <- itr) {
+              bytesReceived += data.getBytes.length
+              eventsReceived += 1
+            }
+            metrics.incrementBucketCount("taxis.bytes", bytesReceived)
+            metrics.incrementBucketCount("taxis.events", eventsReceived)
+          }
           val msg = "Time %s: reading from kafka (%s total records)".format(time, count)
           log.info(msg)
         }
     }
 
     log.info("Stream is starting now...")
-    //println("Stream is starting now...")
 
     // start the stream
     ssc.start
