@@ -14,7 +14,7 @@
 	<version>1.0.0</version>
 	<packaging>jar</packaging>
 
-	<name>plane-streaming-app</name>
+	<name>Plane Streaming App</name>
 
 	<properties>
 		<spark.version>2.2.0</spark.version>
@@ -104,6 +104,7 @@
 	</dependencies>
 
 	<build>
+		<finalName>plane-streaming-app</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.scala-tools</groupId>
